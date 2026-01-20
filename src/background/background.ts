@@ -18,8 +18,10 @@ import {
     removeActiveTab,
     isTabActive,
     getActiveTabs,
+    loadActiveTabIds,
 } from './services/tabManager';
 import {FILTER_COUNT, DEFAULT_FILTER_FREQUENCIES, DEFAULT_FILTER_Q} from '@/types/filter.types';
+import {assertNever, type PopupToBackgroundMessage} from '@/types/messages.types';
 
 /**
  * Get workspace status with all filters, gain, and active tabs
@@ -39,32 +41,26 @@ async function getWorkspaceStatus() {
 
 /**
  * Message handler for background service worker
+ * Handles messages from Popup
  */
-chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message: any, _sender, sendResponse) => {
     (async () => {
         try {
-            switch (message.type) {
+            // Type-safe message handling
+            const typedMessage = message as PopupToBackgroundMessage;
+
+            switch (typedMessage.type) {
                 case 'eqTab': {
                     if (message.on) {
                         // Start EQ on current tab
                         const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
 
                         if (tab && tab.id && !tab.url?.startsWith('chrome')) {
-                            // Stop all existing streams if any
-                            const activeTabs = getActiveTabs();
-                            if (activeTabs) {
-                                await chrome.runtime.sendMessage({type: 'stopAudio'});
-
-                                activeTabs.forEach(tab => {
-                                    tab.id && removeActiveTab(tab.id);
-                                })
-
-                                // Notify popup about tab status change
-                                const statusBefore = await getWorkspaceStatus();
-                                chrome.runtime.sendMessage(statusBefore).catch(() => {
-                                });
-
-                                await new Promise((resolve) => setTimeout(resolve, 100));
+                            // Check if this tab is already active
+                            if (isTabActive(tab.id)) {
+                                console.log('Tab already active, skipping');
+                                sendResponse({success: true, alreadyActive: true});
+                                break;
                             }
 
                             // Setup offscreen document
@@ -82,7 +78,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                             });
 
                             // Add to active tabs
-                            addActiveTab(tab);
+                            await addActiveTab(tab);
 
                             // Get current filters and gain
                             const filters = await getAllFilters();
@@ -91,6 +87,7 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                             // Send to offscreen document
                             await chrome.runtime.sendMessage({
                                 type: 'captureStream',
+                                tabId: tab.id,
                                 streamId,
                                 filters,
                                 gain,
@@ -107,9 +104,8 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                         // Stop EQ on current tab
                         const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
                         if (tab && tab.id && isTabActive(tab.id)) {
-                            removeActiveTab(tab.id);
-                            console.log('disabling tab due button disable event')
-                            await chrome.runtime.sendMessage({type: 'stopAudio'});
+                            await removeActiveTab(tab.id);
+                            await chrome.runtime.sendMessage({type: 'stopAudio', tabId: tab.id});
 
                             // Notify popup about tab status change
                             const status = await getWorkspaceStatus();
@@ -306,15 +302,20 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                 }
 
                 case 'disconnectTab': {
-                    const tabId = message.tab.id;
+                    const tabId = message.tabId;
                     if (tabId && isTabActive(tabId)) {
-                        removeActiveTab(tabId);
-                        console.log('disabling tab due disconnect')
+                        await removeActiveTab(tabId);
+                        console.log('Disabling tab due disconnect:', tabId);
                         try {
-                            await chrome.runtime.sendMessage({type: 'stopAudio'});
+                            await chrome.runtime.sendMessage({type: 'stopAudio', tabId});
                         } catch (e) {
                             console.warn('Failed to stop audio:', e);
                         }
+
+                        // Notify popup about tab status change
+                        const status = await getWorkspaceStatus();
+                        chrome.runtime.sendMessage(status).catch(() => {
+                        });
                     }
                     sendResponse({success: true});
                     break;
@@ -322,15 +323,38 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
 
                 case 'getFFT': {
                     try {
-                        const resp = await chrome.runtime.sendMessage({type: 'getFFT'});
+                        const [tab] = await chrome.tabs.query({active: true, currentWindow: true});
+
+                        if (!tab || !tab.id) {
+                            sendResponse({type: 'fft', fft: []});
+                            break;
+                        }
+
+                        const contexts = await chrome.runtime.getContexts({
+                            contextTypes: ['OFFSCREEN_DOCUMENT' as chrome.runtime.ContextType]
+                        });
+
+                        if (contexts.length === 0) {
+                            console.warn('No offscreen document found');
+                            sendResponse({type: 'fft', fft: []});
+                            break;
+                        }
+
+                        const resp = await chrome.runtime.sendMessage({
+                            type: 'getFFTInternal',
+                            tabId: tab.id
+                        });
+
                         sendResponse(resp || {type: 'fft', fft: []});
                     } catch (e) {
+                        console.error('Failed to get FFT:', e);
                         sendResponse({type: 'fft', fft: []});
                     }
                     break;
                 }
 
                 default:
+                    assertNever(typedMessage);
                     sendResponse({success: true});
             }
         } catch (error) {
@@ -355,4 +379,27 @@ chrome.runtime.onInstalled.addListener(() => {
  */
 initializeFilters();
 
-console.log('Ears background service worker loaded');
+/**
+ * Load active tabs from storage on startup
+ */
+loadActiveTabIds().then(() => {
+    console.log('Active tabs restored from storage');
+});
+
+chrome.tabs.onRemoved.addListener(async (tabId) => {
+    if (isTabActive(tabId)) {
+        console.log('Tab closed, removing from active tabs:', tabId);
+        await removeActiveTab(tabId);
+
+        try {
+            await chrome.runtime.sendMessage({type: 'stopAudio', tabId});
+        } catch (e) {
+            console.warn('Failed to stop audio for closed tab:', e);
+        }
+
+        const status = await getWorkspaceStatus();
+        chrome.runtime.sendMessage(status).catch(() => {});
+    }
+});
+
+console.log('ReEQ background service worker loaded');

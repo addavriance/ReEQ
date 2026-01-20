@@ -2,223 +2,185 @@ import {Filter} from './filter.types';
 import {Preset} from './preset.types';
 
 /**
- * Message types for chrome.runtime messaging
+ * MESSAGE FLOW ARCHITECTURE
+ * =========================
+ *
+ * Popup → Background → Offscreen
+ *
+ * 1. User interacts with Popup
+ * 2. Popup sends message to Background
+ * 3. Background processes and may forward to Offscreen
+ * 4. Offscreen responds to Background
+ * 5. Background broadcasts updates to Popup
+ *
+ * IMPORTANT: Popup never communicates directly with Offscreen!
  */
-export enum MessageType {
-    // Filter messages
-    UPDATE_FILTER = 'UPDATE_FILTER',
-    RESET_FILTER = 'RESET_FILTER',
-    RESET_ALL_FILTERS = 'RESET_ALL_FILTERS',
-    GET_FILTERS = 'GET_FILTERS',
 
-    // Gain messages
-    UPDATE_GAIN = 'UPDATE_GAIN',
-    GET_GAIN = 'GET_GAIN',
+// ============================================================================
+// MESSAGE TYPE CONSTANTS
+// ============================================================================
 
-    // Preset messages
-    SAVE_PRESET = 'SAVE_PRESET',
-    LOAD_PRESET = 'LOAD_PRESET',
-    DELETE_PRESET = 'DELETE_PRESET',
-    GET_PRESETS = 'GET_PRESETS',
-    IMPORT_PRESETS = 'IMPORT_PRESETS',
-    EXPORT_PRESETS = 'EXPORT_PRESETS',
+/**
+ * Messages that Popup sends to Background
+ */
+export const POPUP_TO_BACKGROUND_TYPES = [
+    'eqTab',
+    'getCurrentTabStatus',
+    'getWorkspaceStatus',
+    'getFullRefresh',
+    'modifyFilter',
+    'modifyGain',
+    'resetFilters',
+    'resetFilter',
+    'preset',
+    'savePreset',
+    'deletePreset',
+    'importPresets',
+    'exportPresets',
+    'disconnectTab',
+    'getFFT',
+] as const;
 
-    // Tab messages
-    EQ_TAB = 'EQ_TAB',
-    STOP_EQ_TAB = 'STOP_EQ_TAB',
-    GET_ACTIVE_TABS = 'GET_ACTIVE_TABS',
-    IS_TAB_ACTIVE = 'IS_TAB_ACTIVE',
+/**
+ * Messages that Background sends to Offscreen
+ */
+export const BACKGROUND_TO_OFFSCREEN_TYPES = [
+    'captureStream',
+    'updateFilter',
+    'updateGain',
+    'resetAllFilters',
+    'resetFilter',
+    'applyAllFilters',
+    'getFFTInternal',
+    'stopAudio',
+] as const;
 
-    // FFT messages
-    GET_FFT_DATA = 'GET_FFT_DATA',
-    TOGGLE_VISUALIZER = 'TOGGLE_VISUALIZER',
+/**
+ * Messages that Background broadcasts to Popup
+ */
+export const BACKGROUND_TO_POPUP_TYPES = [
+    'sendWorkspaceStatus',
+    'sendCurrentTabStatus',
+    'sendPresets',
+    'sendSampleRate',
+    'downloadPresets',
+] as const;
 
-    // Offscreen messages
-    CREATE_OFFSCREEN = 'CREATE_OFFSCREEN',
-    CLOSE_OFFSCREEN = 'CLOSE_OFFSCREEN',
+/**
+ * Messages that Offscreen sends back to Background
+ */
+export const OFFSCREEN_TO_BACKGROUND_TYPES = [
+    'fft',
+] as const;
+
+// ============================================================================
+// UNION TYPES FROM CONSTANTS
+// ============================================================================
+
+/**
+ * Extract union types from constant arrays
+ */
+export type PopupToBackgroundType = typeof POPUP_TO_BACKGROUND_TYPES[number];
+export type BackgroundToOffscreenType = typeof BACKGROUND_TO_OFFSCREEN_TYPES[number];
+export type BackgroundToPopupType = typeof BACKGROUND_TO_POPUP_TYPES[number];
+export type OffscreenToBackgroundType = typeof OFFSCREEN_TO_BACKGROUND_TYPES[number];
+
+// ============================================================================
+// HELPER FUNCTIONS
+// ============================================================================
+
+/**
+ * Exhaustive check helper for TypeScript
+ * Ensures all cases in switch are handled
+ *
+ * Usage:
+ * default:
+ *   assertNever(message.type);
+ */
+export function assertNever(value: never): never {
+    throw new Error(`Unhandled case: ${value}`);
 }
 
 /**
- * Base message structure
+ * Check if message is intended for Offscreen document
  */
-export interface BaseMessage {
-    type: MessageType;
+export function isOffscreenMessage(type: string): type is BackgroundToOffscreenType {
+    return (BACKGROUND_TO_OFFSCREEN_TYPES as readonly string[]).includes(type);
 }
 
 /**
- * Filter update message
+ * Check if message is a broadcast from Background to Popup
  */
-export interface UpdateFilterMessage extends BaseMessage {
-    type: MessageType.UPDATE_FILTER;
-    tabId: number;
-    filterIndex: number;
-    updates: Partial<Filter>;
+export function isBackgroundBroadcast(type: string): type is BackgroundToPopupType {
+    return (BACKGROUND_TO_POPUP_TYPES as readonly string[]).includes(type);
 }
 
 /**
- * Reset filter message
+ * Check if message should be ignored by Popup (internal messages)
  */
-export interface ResetFilterMessage extends BaseMessage {
-    type: MessageType.RESET_FILTER;
-    tabId: number;
-    filterIndex: number;
+export function shouldPopupIgnore(type: string): boolean {
+    return isOffscreenMessage(type) ||
+           (OFFSCREEN_TO_BACKGROUND_TYPES as readonly string[]).includes(type);
 }
 
-/**
- * Reset all filters message
- */
-export interface ResetAllFiltersMessage extends BaseMessage {
-    type: MessageType.RESET_ALL_FILTERS;
-    tabId: number;
-}
+// ============================================================================
+// TYPE DEFINITIONS
+// ============================================================================
 
 /**
- * Get filters message
+ * Messages from Popup to Background
  */
-export interface GetFiltersMessage extends BaseMessage {
-    type: MessageType.GET_FILTERS;
-    tabId: number;
-}
+export type PopupToBackgroundMessage =
+    | { type: 'eqTab'; on: boolean }
+    | { type: 'getCurrentTabStatus' }
+    | { type: 'getWorkspaceStatus' }
+    | { type: 'getFullRefresh' }
+    | { type: 'modifyFilter'; index: number; frequency: number; gain: number; q: number }
+    | { type: 'modifyGain'; gain: number }
+    | { type: 'resetFilters' }
+    | { type: 'resetFilter'; index: number }
+    | { type: 'preset'; preset: string }
+    | { type: 'savePreset'; preset: string }
+    | { type: 'deletePreset'; preset: string }
+    | { type: 'importPresets'; presets: Record<string, Preset> }
+    | { type: 'exportPresets' }
+    | { type: 'disconnectTab'; tabId: number }
+    | { type: 'getFFT' };
 
 /**
- * Update gain message
+ * Messages from Background to Offscreen
  */
-export interface UpdateGainMessage extends BaseMessage {
-    type: MessageType.UPDATE_GAIN;
-    tabId: number;
-    gain: number;
-}
+export type BackgroundToOffscreenMessage =
+    | { type: 'captureStream'; tabId: number; streamId: string; filters: Filter[]; gain: number }
+    | { type: 'updateFilter'; index: number; frequency: number; gain: number; q: number }
+    | { type: 'updateGain'; gain: number }
+    | { type: 'resetAllFilters' }
+    | { type: 'resetFilter'; index: number }
+    | { type: 'applyAllFilters'; filters: Filter[] }
+    | { type: 'getFFTInternal'; tabId: number }
+    | { type: 'stopAudio'; tabId: number };
 
 /**
- * Get gain message
+ * Messages from Background to Popup (broadcasts)
  */
-export interface GetGainMessage extends BaseMessage {
-    type: MessageType.GET_GAIN;
-    tabId: number;
-}
+export type BackgroundToPopupMessage =
+    | { type: 'sendWorkspaceStatus'; eqFilters: Filter[]; streams: chrome.tabs.Tab[]; gain: number }
+    | { type: 'sendCurrentTabStatus'; streaming: boolean }
+    | { type: 'sendPresets'; presets: Record<string, Preset> }
+    | { type: 'sendSampleRate'; Fs: number }
+    | { type: 'downloadPresets'; presets: Record<string, Preset> };
 
 /**
- * Save preset message
+ * Messages from Offscreen to Background (responses)
  */
-export interface SavePresetMessage extends BaseMessage {
-    type: MessageType.SAVE_PRESET;
-    preset: Preset;
-}
+export type OffscreenToBackgroundMessage =
+    | { type: 'fft'; fft: number[] };
 
 /**
- * Load preset message
- */
-export interface LoadPresetMessage extends BaseMessage {
-    type: MessageType.LOAD_PRESET;
-    tabId: number;
-    presetName: string;
-}
-
-/**
- * Delete preset message
- */
-export interface DeletePresetMessage extends BaseMessage {
-    type: MessageType.DELETE_PRESET;
-    presetName: string;
-}
-
-/**
- * Get presets message
- */
-export interface GetPresetsMessage extends BaseMessage {
-    type: MessageType.GET_PRESETS;
-}
-
-/**
- * Import presets message
- */
-export interface ImportPresetsMessage extends BaseMessage {
-    type: MessageType.IMPORT_PRESETS;
-    presets: Record<string, Preset>;
-}
-
-/**
- * Export presets message
- */
-export interface ExportPresetsMessage extends BaseMessage {
-    type: MessageType.EXPORT_PRESETS;
-}
-
-/**
- * EQ tab message
- */
-export interface EQTabMessage extends BaseMessage {
-    type: MessageType.EQ_TAB;
-    tabId: number;
-}
-
-/**
- * Stop EQ tab message
- */
-export interface StopEQTabMessage extends BaseMessage {
-    type: MessageType.STOP_EQ_TAB;
-    tabId: number;
-}
-
-/**
- * Get active tabs message
- */
-export interface GetActiveTabsMessage extends BaseMessage {
-    type: MessageType.GET_ACTIVE_TABS;
-}
-
-/**
- * Is tab active message
- */
-export interface IsTabActiveMessage extends BaseMessage {
-    type: MessageType.IS_TAB_ACTIVE;
-    tabId: number;
-}
-
-/**
- * Get FFT data message
- */
-export interface GetFFTDataMessage extends BaseMessage {
-    type: MessageType.GET_FFT_DATA;
-    tabId: number;
-}
-
-/**
- * Toggle visualizer message
- */
-export interface ToggleVisualizerMessage extends BaseMessage {
-    type: MessageType.TOGGLE_VISUALIZER;
-    enabled: boolean;
-}
-
-/**
- * Union type of all messages
+ * All message types combined
  */
 export type ChromeMessage =
-    | UpdateFilterMessage
-    | ResetFilterMessage
-    | ResetAllFiltersMessage
-    | GetFiltersMessage
-    | UpdateGainMessage
-    | GetGainMessage
-    | SavePresetMessage
-    | LoadPresetMessage
-    | DeletePresetMessage
-    | GetPresetsMessage
-    | ImportPresetsMessage
-    | ExportPresetsMessage
-    | EQTabMessage
-    | StopEQTabMessage
-    | GetActiveTabsMessage
-    | IsTabActiveMessage
-    | GetFFTDataMessage
-    | ToggleVisualizerMessage;
-
-/**
- * Message response structure
- */
-export interface MessageResponse<T = any> {
-    success: boolean;
-    data?: T;
-    error?: string;
-}
+    | PopupToBackgroundMessage
+    | BackgroundToOffscreenMessage
+    | BackgroundToPopupMessage
+    | OffscreenToBackgroundMessage;

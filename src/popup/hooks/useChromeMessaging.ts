@@ -1,6 +1,10 @@
 import {useEffect} from 'react';
 import {useEQStore} from '@/store';
-import {Filter} from '@/types/filter.types';
+import {
+    shouldPopupIgnore,
+    assertNever,
+    type BackgroundToPopupMessage
+} from '@/types/messages.types';
 
 /**
  * Hook for handling Chrome runtime messages
@@ -9,29 +13,37 @@ import {Filter} from '@/types/filter.types';
 export function useChromeMessaging() {
     useEffect(() => {
         const handleMessage = (message: any) => {
-            switch (message.type) {
+            // Ignore internal messages between background and offscreen
+            if (shouldPopupIgnore(message.type)) {
+                return;
+            }
+
+            // Type-safe message handling
+            const typedMessage = message as BackgroundToPopupMessage;
+
+            switch (typedMessage.type) {
                 case 'sendWorkspaceStatus': {
                     // Update filters
-                    if (message.eqFilters && Array.isArray(message.eqFilters)) {
-                        useEQStore.getState().filters.setFilters(message.eqFilters as Filter[]);
+                    if (typedMessage.eqFilters && Array.isArray(typedMessage.eqFilters)) {
+                        useEQStore.getState().filters.setFilters(typedMessage.eqFilters);
                     }
 
                     // Update gain
-                    if (message.gain !== undefined) {
-                        useEQStore.getState().gain.updateGain(message.gain);
+                    if (typedMessage.gain !== undefined) {
+                        useEQStore.getState().gain.updateGain(typedMessage.gain);
                     }
 
                     // Update active tabs
-                    if (message.streams && Array.isArray(message.streams)) {
-                        const tabIds = message.streams.map((tab: any) => tab.id).filter(Boolean);
+                    if (typedMessage.streams && Array.isArray(typedMessage.streams)) {
+                        const tabIds = typedMessage.streams.map((tab: any) => tab.id).filter(Boolean);
                         useEQStore.getState().tabs.setActiveTabs(tabIds);
                     }
                     break;
                 }
 
                 case 'sendPresets': {
-                    if (message.presets) {
-                        useEQStore.getState().presets.setPresets(message.presets);
+                    if (typedMessage.presets) {
+                        useEQStore.getState().presets.setPresets(typedMessage.presets);
                     }
                     break;
                 }
@@ -41,15 +53,35 @@ export function useChromeMessaging() {
                     break;
                 }
 
-                default:
+                case 'sendSampleRate': {
+                    // Sample rate update - currently not used in UI
                     break;
+                }
+
+                case 'downloadPresets': {
+                    // Download presets - handled elsewhere
+                    break;
+                }
+
+                default:
+                    // Exhaustive check: if you get an error here, you forgot to handle a message type
+                    assertNever(typedMessage);
+            }
+        };
+
+        const handleStorageChange = (changes: {[key: string]: chrome.storage.StorageChange}) => {
+            if (changes['eq_active_tabs']) {
+                const newActiveTabs = changes['eq_active_tabs'].newValue as number[] || [];
+                useEQStore.getState().tabs.setActiveTabs(newActiveTabs);
             }
         };
 
         chrome.runtime.onMessage.addListener(handleMessage);
+        chrome.storage.onChanged.addListener(handleStorageChange);
 
         return () => {
             chrome.runtime.onMessage.removeListener(handleMessage);
+            chrome.storage.onChanged.removeListener(handleStorageChange);
         };
     }, []);
 }

@@ -1,38 +1,62 @@
 import {AudioEngine} from './audioEngine/AudioEngine';
-import {Filter} from '@/types/filter.types';
+import {
+    isOffscreenMessage,
+    assertNever,
+    type BackgroundToOffscreenMessage
+} from '@/types/messages.types';
 
 /**
- * Global audio engine instance
+ * Map of audio engines per tab
+ * Key: tabId, Value: AudioEngine instance
  */
-const audioEngine = new AudioEngine();
+const audioEngines = new Map<number, AudioEngine>();
 
 /**
  * Message handler for offscreen document
+ * Only processes messages from Background intended for Offscreen
  */
-chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
+chrome.runtime.onMessage.addListener((message: any, _sender, sendResponse) => {
+    // Only handle messages intended for offscreen
+    if (!isOffscreenMessage(message.type)) {
+        return; // Not for us, ignore
+    }
+
+    // Now message.type is typed as BackgroundToOffscreenType
+    const typedMessage = message as BackgroundToOffscreenMessage;
+
     (async () => {
         try {
-            switch (message.type) {
+            switch (typedMessage.type) {
                 case 'captureStream':
                     try {
+                        const tabId = typedMessage.tabId;
+
                         // Capture tab audio stream
                         const stream = await navigator.mediaDevices.getUserMedia({
                             audio: {
                                 // @ts-ignore - Chrome specific properties
                                 mandatory: {
                                     chromeMediaSource: 'tab',
-                                    chromeMediaSourceId: message.streamId,
+                                    chromeMediaSourceId: typedMessage.streamId,
                                 },
                             },
                             video: false,
                         });
 
-                        await audioEngine.setupAudio(
+                        // Create or get audio engine for this tab
+                        let engine = audioEngines.get(tabId);
+                        if (!engine) {
+                            engine = new AudioEngine();
+                            audioEngines.set(tabId, engine);
+                        }
+
+                        await engine.setupAudio(
                             stream,
-                            message.filters as Filter[],
-                            message.gain as number
+                            typedMessage.filters,
+                            typedMessage.gain
                         );
 
+                        console.log(`Audio engine started for tab ${tabId}. Active engines:`, audioEngines.size);
                         sendResponse({success: true});
                     } catch (err) {
                         console.error('Capture failed:', err);
@@ -41,49 +65,83 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                     break;
 
                 case 'updateFilter':
-                    audioEngine.updateFilter(message.index, {
-                        frequency: message.frequency,
-                        gain: message.gain,
-                        q: message.q,
+                    // Apply to all active audio engines
+                    audioEngines.forEach((engine) => {
+                        engine.updateFilter(typedMessage.index, {
+                            frequency: typedMessage.frequency,
+                            gain: typedMessage.gain,
+                            q: typedMessage.q,
+                        });
                     });
                     sendResponse({success: true});
                     break;
 
                 case 'updateGain':
-                    audioEngine.updateGain(message.gain);
+                    // Apply to all active audio engines
+                    audioEngines.forEach((engine) => {
+                        engine.updateGain(typedMessage.gain);
+                    });
                     sendResponse({success: true});
                     break;
 
                 case 'resetAllFilters':
-                    audioEngine.resetAllFilters();
+                    // Apply to all active audio engines
+                    audioEngines.forEach((engine) => {
+                        engine.resetAllFilters();
+                    });
                     sendResponse({success: true});
                     break;
 
                 case 'resetFilter':
-                    audioEngine.resetFilter(message.index);
+                    // Apply to all active audio engines
+                    audioEngines.forEach((engine) => {
+                        engine.resetFilter(typedMessage.index);
+                    });
                     sendResponse({success: true});
                     break;
 
                 case 'applyAllFilters':
-                    audioEngine.applyAllFilters(message.filters as Filter[]);
+                    // Apply to all active audio engines
+                    audioEngines.forEach((engine) => {
+                        engine.applyAllFilters(typedMessage.filters);
+                    });
                     sendResponse({success: true});
                     break;
 
-                case 'getFFT':
-                    const fftData = audioEngine.getFFTData();
+                case 'getFFTInternal': {
+                    // Get FFT from specific tab's audio engine
+                    const tabId = typedMessage.tabId;
+                    const engine = audioEngines.get(tabId);
+
+                    if (!engine) {
+                        console.warn(`[Offscreen] No audio engine found for tab ${tabId}`);
+                        sendResponse({type: 'fft', fft: []});
+                        break;
+                    }
+
+                    const fftData = engine.getFFTData();
                     sendResponse({
                         type: 'fft',
                         fft: Array.from(fftData),
                     });
                     break;
+                }
 
-                case 'stopAudio':
-                    await audioEngine.stopAudio();
+                case 'stopAudio': {
+                    const tabIdToStop = typedMessage.tabId;
+                    const engineToStop = audioEngines.get(tabIdToStop);
+                    if (engineToStop) {
+                        await engineToStop.stopAudio();
+                        audioEngines.delete(tabIdToStop);
+                        console.log(`Audio engine stopped for tab ${tabIdToStop}. Active engines:`, audioEngines.size);
+                    }
                     sendResponse({success: true});
                     break;
+                }
 
                 default:
-                    sendResponse({success: true});
+                    // Exhaustive check: if you get an error here, you forgot to handle a message type
+                    assertNever(typedMessage);
             }
         } catch (error) {
             console.error('Offscreen error:', error);
@@ -95,4 +153,4 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
     return true;
 });
 
-console.log('Ears offscreen loaded');
+console.log('ReEQ offscreen loaded');
