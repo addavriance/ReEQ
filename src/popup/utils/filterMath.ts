@@ -15,8 +15,6 @@ export interface BiquadCoefficients {
 
 /**
  * Calculate biquad filter coefficients for a given filter
- * CRITICAL: This math must not be changed - it directly affects audio quality
- * Ported from popup.js:328-389
  */
 export function calculateFilterCoefficients(filter: Filter): BiquadCoefficients {
     const {frequency, gain, q, type} = filter;
@@ -124,25 +122,38 @@ export function calculateFrequencyResponse(
 /**
  * Calculate filter curve points for drawing
  * Returns an array of [x, y] coordinates
+ * Samples logarithmically in frequency space for better detail at all frequencies
  */
 export function calculateFilterCurve(
     filter: Filter,
     canvasWidth: number,
-    xToFrequency: (x: number) => number,
     gainToY: (gain: number) => number,
     canvasHeight: number,
-    step: number = 2
+    frequencyToX: (freq: number) => number
 ): number[] {
     const coefficients = calculateFilterCoefficients(filter);
     const points: number[] = [];
 
-    for (let x = 0; x < canvasWidth; x += step) {
-        const freq = xToFrequency(x);
+    // Sample logarithmically in frequency space
+    // This ensures Q-factor appears wider on high frequencies (as it should on log scale)
+    const minFreq = 1; // 1 Hz (чтобы не обрезало)
+    const maxFreq = 22000; // 22 kHz
+    const samplesPerOctave = 100; // Больше детализации для плавных кривых
+
+    const minLog = Math.log2(minFreq);
+    const maxLog = Math.log2(maxFreq);
+    const logRange = maxLog - minLog;
+    const totalSamples = Math.ceil(logRange * samplesPerOctave);
+
+    for (let i = 0; i < totalSamples; i++) {
+        const logFreq = minLog + (i / totalSamples) * logRange;
+        const freq = Math.pow(2, logFreq);
+
         const magnitude = calculateFrequencyResponse(coefficients, freq);
+        const x = frequencyToX(freq);
         const y = gainToY(magnitude);
 
-        // Only add points that are finite and have noticeable magnitude
-        if (isFinite(y) && Math.abs(y - canvasHeight / 2) > 1) {
+        if (isFinite(y) && x >= 0 && x <= canvasWidth && Math.abs(y - canvasHeight / 2) > 1) {
             points.push(x, y);
         }
     }

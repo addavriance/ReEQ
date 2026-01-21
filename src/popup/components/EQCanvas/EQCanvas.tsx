@@ -161,7 +161,7 @@ export function EQCanvas({
         onDrag: handleDrag,
         onDragEnd: handleDragEnd,
         isInBounds,
-        canvas: canvasRef.current,
+        canvasRef,
     });
 
     /**
@@ -208,10 +208,9 @@ export function EQCanvas({
             const points = calculateFilterCurve(
                 filter,
                 width,
-                xToFrequency,
-                gainToY,
+                (gain) => gainToY(gain, height),
                 height,
-                4
+                (freq) => frequencyToX(freq, width)
             );
 
             if (points.length < 4) return;
@@ -227,9 +226,26 @@ export function EQCanvas({
             const minWidth = 0.4;
             const maxAlpha = 0.9;
 
-            const fadeLength = 0.60; // 15% в начале и конце
+            const coreWidth = 0.4;
+            const fadeZone = 0.8;
 
             const segmentCount = points.length / 2 - 1;
+
+            const segmentLengths: number[] = [];
+            let totalLength = 0;
+
+            for (let s = 0; s < segmentCount; s++) {
+                const i = s * 2;
+
+                const dx = points[i + 2] - points[i];
+                const dy = points[i + 3] - points[i + 1];
+                const len = Math.hypot(dx, dy);
+
+                segmentLengths.push(len);
+                totalLength += len;
+            }
+
+            let accumulatedLength = 0;
 
             for (let s = 0; s < segmentCount; s++) {
                 const i = s * 2;
@@ -239,10 +255,23 @@ export function EQCanvas({
                 const x1 = points[i + 2];
                 const y1 = points[i + 3];
 
-                const t = s / segmentCount; // 0..1 вдоль линии
-                const edgeT = Math.min(t, 1 - t);
+                const segLen = segmentLengths[s];
 
-                const fade = smoothstep(0, fadeLength, edgeT);
+                const t = (accumulatedLength + segLen * 0.5) / totalLength;
+
+                accumulatedLength += segLen;
+
+                const distFromCenter = Math.abs(t - 0.5);
+
+                const coreRadius = coreWidth / 2;
+                const fadeStart = coreRadius;
+                const fadeEnd = 0.6;
+
+                let fade = 1.0;
+                if (distFromCenter > fadeStart) {
+                    const fadeT = (distFromCenter - fadeStart) / (fadeEnd - fadeStart);
+                    fade = 1.0 - smoothstep(0, fadeZone, fadeT);
+                }
 
                 ctx.beginPath();
                 ctx.strokeStyle = color;
@@ -258,6 +287,7 @@ export function EQCanvas({
             ctx.globalAlpha = 1;
         });
     }, [width, height]);
+
 
 
     /**
