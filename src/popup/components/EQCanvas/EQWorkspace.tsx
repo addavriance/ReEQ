@@ -11,12 +11,12 @@ export function EQWorkspace() {
         <>
             {/* Gain scale and line */}
             <div className="ears__eq-gain-container">
-                <GainScale/>
                 <GainLine/>
             </div>
 
             {/* Main EQ canvas */}
             <div className="ears__eq-main-container">
+                <GainScale/>
                 <EQCanvas/>
             </div>
         </>
