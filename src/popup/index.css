@@ -1,0 +1,173 @@
+/* Reset */
+body {
+    margin: 0;
+    padding: 0;
+    background-color: #2C3E50;
+}
+
+/* Base Styles */
+.ears {
+    background-color: #2C3E50;
+    -webkit-touch-callout: none;
+    -webkit-user-select: none;
+    -khtml-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    user-select: none;
+    min-width: 640px;
+    color: #E8F4F8;
+    font-family: Arial, sans-serif;
+}
+
+.ears__container {
+    padding: 15px;
+}
+
+/* Header */
+.ears__header {
+    text-align: center;
+    margin-bottom: 15px;
+}
+
+.ears__title {
+    color: #A8D8EA;
+    margin: 0 0 10px 0;
+    font-size: 24px;
+}
+
+.ears__warning {
+    margin-bottom: 10px;
+}
+
+.ears__warning-text {
+    color: #E8F4F8;
+    font-size: 12px;
+}
+
+/* EQ Section */
+.ears__eq {
+    position: relative;
+    margin-bottom: 20px;
+    display: flex;
+    gap: 0;
+}
+
+.ears__eq-gain-container {
+    position: relative;
+    display: inline-block;
+}
+
+.ears__eq-main-container {
+    display: inline-block;
+}
+
+.ears__viz-button {
+    font-size: 10px;
+    background-color: #2C3E50;
+    color: #A8D8EA;
+    border: 1px solid #A8D8EA;
+    border-radius: 2px;
+    padding: 5px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    position: absolute;
+    top: -44px;
+}
+
+.ears__viz-button--active {
+    background-color: #A8D8EA;
+    color: #2C3E50;
+}
+
+/* Controls */
+.ears__controls {
+    margin-bottom: 10px;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.ears__preset-controls,
+.ears__import-export {
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.ears__button {
+    background-color: #2C3E50;
+    color: #A8D8EA;
+    border: 1px solid #A8D8EA;
+    border-radius: 2px;
+    padding: 5px 10px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 12px;
+}
+
+.ears__button:hover {
+    background-color: #A8D8EA;
+    color: #2C3E50;
+}
+
+.ears__preset-input {
+    height: 20px;
+    width: 75px;
+    background-color: #2C3E50;
+    color: #A8D8EA;
+    border: 1px solid #A8D8EA;
+    border-radius: 2px;
+    padding: 0 5px;
+}
+
+/* Presets */
+.ears__presets {
+    margin-bottom: 10px;
+    display: flex;
+    gap: 5px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.ears__user-presets {
+    color: #A8D8EA;
+    display: flex;
+    gap: 5px;
+    flex-wrap: wrap;
+}
+
+/* Current Tab */
+.ears__current-tab {
+    text-align: center;
+    margin: 15px 0;
+}
+
+.ears__button--eq {
+    padding: 8px 16px;
+    font-size: 14px;
+}
+
+.ears__button--stop {
+    background-color: #A8D8EA;
+    color: #2C3E50;
+}
+
+/* Footer */
+.ears__footer {
+    margin-top: 20px;
+    text-align: center;
+    font-size: 12px;
+    color: #A8D8EA;
+}
+
+.ears__footer-link {
+    color: #A8D8EA;
+    text-decoration: none;
+    margin: 0 10px;
+}
+
+.ears__footer-link:hover {
+    color: #87CEEB;
+    text-decoration: underline;
+}
