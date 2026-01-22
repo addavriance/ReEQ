@@ -214,6 +214,11 @@ chrome.runtime.onMessage.addListener((message, _sender, sendResponse) => {
                             console.warn('Failed to send filter reset to offscreen:', e);
                         }
                     }
+
+                    const resetStatus = await getWorkspaceStatus();
+                    chrome.runtime.sendMessage(resetStatus).catch(() => {
+                    });
+
                     sendResponse({success: true});
                     break;
                 }

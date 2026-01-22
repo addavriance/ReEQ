@@ -399,7 +399,7 @@ export function EQCanvas({
                 const y = gainToY(filter.gain, height);
                 const distance = Math.sqrt(Math.pow(mouseX - x, 2) + Math.pow(mouseY - y, 2));
 
-                if (distance <= FILTER_DOT_RADIUS + 5) {
+                if (distance <= FILTER_DOT_RADIUS + 2) {
                     chrome.runtime.sendMessage({
                         type: 'resetFilter',
                         index,
