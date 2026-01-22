@@ -91,6 +91,8 @@ export function GainLine() {
         const ctx = canvas.getContext('2d');
         if (!ctx) return
 
+        const gainValueOffset = y < 15 ? 20 : 0;
+
         const dpr = window.devicePixelRatio || 1;
         transformCanvasByRatio(canvas, ctx, GAIN_CANVAS_WIDTH, GAIN_CANVAS_HEIGHT, dpr);
 
@@ -103,7 +105,7 @@ export function GainLine() {
         ctx.font = '10px sans-serif';
         ctx.textAlign = 'center';
         ctx.textBaseline = 'bottom';
-        ctx.fillText(`${gainDB.toFixed(1)} dB`, GAIN_CANVAS_WIDTH / 2, y - GAIN_LINE_HEIGHT);
+        ctx.fillText(`${gainDB.toFixed(1)} dB`, GAIN_CANVAS_WIDTH / 2, y - GAIN_LINE_HEIGHT + gainValueOffset);
     }, [y, gainDB, isDragging]);
 
     return (
