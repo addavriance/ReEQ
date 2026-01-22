@@ -1,6 +1,7 @@
 import {useEffect, useRef} from 'react';
 import {gainToY} from '@/popup/utils/coordinateTransforms';
 import {MIN_GAIN, MAX_GAIN, COLORS, GAIN_CANVAS_WIDTH, GAIN_CANVAS_HEIGHT} from '@/popup/utils/constants';
+import {transformCanvasByRatio} from "@/popup/utils/canvas.ts";
 
 /**
  * Gain scale component
@@ -15,6 +16,9 @@ export function GainScale() {
 
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
+
+        const dpr = window.devicePixelRatio || 1;
+        transformCanvasByRatio(canvas, ctx, GAIN_CANVAS_WIDTH, GAIN_CANVAS_HEIGHT, dpr);
 
         // Clear canvas
         ctx.clearRect(0, 0, GAIN_CANVAS_WIDTH, GAIN_CANVAS_HEIGHT);

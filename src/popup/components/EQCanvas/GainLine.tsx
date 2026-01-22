@@ -10,6 +10,7 @@ import {
     MAX_GAIN
 } from '@/popup/utils/constants';
 import {useEQStore} from '@/store';
+import {transformCanvasByRatio} from "@/popup/utils/canvas.ts";
 
 /**
  * GainLine component
@@ -88,16 +89,16 @@ export function GainLine() {
         if (!canvas) return;
 
         const ctx = canvas.getContext('2d');
-        if (!ctx) return;
+        if (!ctx) return
 
-        // Clear canvas
+        const dpr = window.devicePixelRatio || 1;
+        transformCanvasByRatio(canvas, ctx, GAIN_CANVAS_WIDTH, GAIN_CANVAS_HEIGHT, dpr);
+
         ctx.clearRect(0, 0, GAIN_CANVAS_WIDTH, GAIN_CANVAS_HEIGHT);
 
-        // Draw line
         ctx.fillStyle = isDragging ? COLORS.filterDotActive : COLORS.gainLine;
         ctx.fillRect(0, y - GAIN_LINE_HEIGHT / 2, GAIN_CANVAS_WIDTH, GAIN_LINE_HEIGHT);
 
-        // Draw gain value
         ctx.fillStyle = COLORS.text;
         ctx.font = '10px sans-serif';
         ctx.textAlign = 'center';

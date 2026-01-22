@@ -21,6 +21,7 @@ import {
     Q_SENSITIVITY,
     SAMPLE_RATE
 } from '@/popup/utils/constants';
+import {transformCanvasByRatio} from "@/popup/utils/canvas.ts";
 
 interface EQCanvasProps {
     width?: number;
@@ -422,19 +423,18 @@ export function EQCanvas({
         const ctx = canvas.getContext('2d');
         if (!ctx) return;
 
-        // Функция для одного кадра
+        const dpr = window.devicePixelRatio || 1;
+        transformCanvasByRatio(canvas, ctx, width, height, dpr);
+
         const renderFrame = () => {
             draw(ctx);
             requestAnimationFrame(renderFrame);
         };
 
-        // Запускаем анимацию
         const animationId = requestAnimationFrame(renderFrame);
+        return () => cancelAnimationFrame(animationId);
+    }, [draw, width, height]);
 
-        return () => {
-            cancelAnimationFrame(animationId);
-        };
-    }, [draw]); // ← Теперь зависит только от draw
 
     return (
         <canvas
