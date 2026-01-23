@@ -113,7 +113,6 @@ async function saveToStorage(state: EQStore) {
             [STORAGE_KEYS.FILTERS]: state.filters.items,
             [STORAGE_KEYS.GAIN]: state.gain.value,
             [STORAGE_KEYS.PRESETS]: state.presets.items,
-            [STORAGE_KEYS.ACTIVE_TABS]: state.tabs.activeTabs,
             [STORAGE_KEYS.VISUALIZER_ENABLED]: state.ui.isVisualizerEnabled,
         });
     } catch (error) {
