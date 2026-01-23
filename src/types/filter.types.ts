@@ -34,17 +34,17 @@ export const DEFAULT_FILTER_TYPES: FilterType[] = [
  * Default filter frequencies based on index (in Hz)
  */
 export const DEFAULT_FILTER_FREQUENCIES = [
-    32,    // Filter 0 (lowshelf)
-    64,    // Filter 1
-    125,   // Filter 2
-    250,   // Filter 3
-    500,   // Filter 4
-    1000,  // Filter 5
-    2000,  // Filter 6
-    4000,  // Filter 7
-    8000,  // Filter 8
-    12000, // Filter 9
-    16000, // Filter 10 (highshelf)
+    20,    // Filter 0 (lowshelf)
+    40,    // Filter 1
+    80,   // Filter 2
+    160,   // Filter 3
+    320,   // Filter 4
+    640,  // Filter 5
+    1280,  // Filter 6
+    2580,  // Filter 7
+    5120,  // Filter 8
+    10240, // Filter 9
+    20480, // Filter 10 (highshelf)
 ];
 
 /**

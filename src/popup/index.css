@@ -14,7 +14,6 @@ body {
     -moz-user-select: none;
     -ms-user-select: none;
     user-select: none;
-    min-width: 640px;
     color: #E8F4F8;
     font-family: Arial, sans-serif;
 }
@@ -25,8 +24,10 @@ body {
 
 /* Header */
 .ears__header {
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
     text-align: center;
-    margin-bottom: 15px;
 }
 
 .ears__title {
@@ -44,6 +45,38 @@ body {
     font-size: 12px;
 }
 
+/* Tabs Navigation */
+.ears__tabs {
+    display: flex;
+    gap: 5px;
+}
+
+.ears__tab {
+    background-color: transparent;
+    color: #A8D8EA;
+    border: none;
+    border-bottom: 2px solid transparent;
+    padding: 8px 16px;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    font-size: 14px;
+}
+
+.ears__tab:hover {
+    background-color: rgba(168, 216, 234, 0.1);
+}
+
+.ears__tab--active {
+    border-bottom-color: #A8D8EA;
+    color: #E8F4F8;
+    font-weight: bold;
+}
+
+.ears__tab-content {
+    min-width: 653px;
+    min-height: 440px;
+}
+
 /* EQ Section */
 .ears__eq {
     position: relative;
@@ -58,7 +91,7 @@ body {
 }
 
 .ears__eq-main-container {
-    display: inline-block;
+    display: inherit;
 }
 
 .ears__viz-button {
@@ -71,7 +104,7 @@ body {
     cursor: pointer;
     transition: all 0.3s ease;
     position: absolute;
-    top: -44px;
+    left: -1px;
 }
 
 .ears__viz-button--active {
@@ -151,6 +184,39 @@ body {
 .ears__button--stop {
     background-color: #A8D8EA;
     color: #2C3E50;
+}
+
+/* Active Tabs List */
+.ears__active-tabs {
+    margin-bottom: 10px;
+}
+
+.ears__tabs-empty {
+    text-align: center;
+    padding: 20px;
+    color: #A8D8EA;
+    font-size: 14px;
+}
+
+.ears__tabs-table {
+    width: 100%;
+    border-collapse: collapse;
+}
+
+.ears__tabs-table td {
+    padding: 5px;
+}
+
+.ears__tab-title {
+    color: #E8F4F8;
+    font-size: 12px;
+}
+
+.ears__tab-favicon {
+    max-height: 16px;
+    max-width: 16px;
+    margin-left: 8px;
+    vertical-align: middle;
 }
 
 /* Footer */
