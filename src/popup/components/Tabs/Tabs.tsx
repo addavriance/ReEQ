@@ -1,6 +1,6 @@
 interface TabsProps {
-    activeTab: 'eq' | 'tabs';
-    onTabChange: (tab: 'eq' | 'tabs') => void;
+    activeTab: 'eq' | 'guide' | 'tabs';
+    onTabChange: (tab: 'eq' | 'guide' | 'tabs') => void;
 }
 
 /**
@@ -14,6 +14,12 @@ export function Tabs({ activeTab, onTabChange }: TabsProps) {
                 onClick={() => onTabChange('eq')}
             >
                 EQ
+            </button>
+            <button
+                className={`ears__tab ${activeTab === 'guide' ? 'ears__tab--active' : ''}`}
+                onClick={() => onTabChange('guide')}
+            >
+                Guide
             </button>
             <button
                 className={`ears__tab ${activeTab === 'tabs' ? 'ears__tab--active' : ''}`}

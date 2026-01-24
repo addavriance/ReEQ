@@ -5,12 +5,13 @@ import {PresetList} from './components/Controls/PresetList';
 import {EQToggleButton} from './components/Controls/EQToggleButton';
 import {VisualizerToggle} from './components/Controls/VisualizerToggle';
 import {ActiveTabsList} from './components/Controls/ActiveTabsList';
+import {Guide} from './components/Guide/Guide';
 import {Tabs} from './components/Tabs/Tabs';
 import {useChromeMessaging, requestWorkspaceRefresh} from './hooks/useChromeMessaging';
 import {useTabSync} from './hooks/useTabSync';
 
 function App() {
-    const [activeTab, setActiveTab] = useState<'eq' | 'tabs'>('eq');
+    const [activeTab, setActiveTab] = useState<'eq' | 'guide' | 'tabs'>('eq');
 
     useChromeMessaging();
     useTabSync();
@@ -37,7 +38,7 @@ function App() {
 
                 {/* Tab Content */}
                 <div className="ears__tab-content">
-                    {activeTab === 'eq' ? (
+                    {activeTab === 'eq' && (
                         <>
                             {/* Main EQ Workspace */}
                             <div className="ears__eq">
@@ -60,7 +61,13 @@ function App() {
                                 <EQToggleButton/>
                             </div>
                         </>
-                    ) : (
+                    )}
+
+                    {activeTab === 'guide' && (
+                        <Guide/>
+                    )}
+
+                    {activeTab === 'tabs' && (
                         <>
                             {/* Active Tabs List */}
                             <div className="ears__active-tabs">

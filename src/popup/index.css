@@ -237,3 +237,35 @@ body {
     color: #87CEEB;
     text-decoration: underline;
 }
+
+/* Guide */
+.ears__guide {
+    padding: 10px;
+    max-height: 400px;
+    overflow-y: auto;
+}
+
+.ears__guide-text {
+    margin-top: 5px;
+    margin-bottom: 15px;
+    line-height: 1.4;
+    font-size: 13px;
+}
+
+.ears__guide-subtitle {
+    margin-bottom: 5px;
+    margin-top: 15px;
+    line-height: 1em;
+    color: #A8D8EA;
+    font-size: 16px;
+}
+
+.ears__guide-list {
+    margin: 10px 0 10px 20px;
+    line-height: 1.6;
+    font-size: 13px;
+}
+
+.ears__guide-list li {
+    margin-bottom: 5px;
+}
