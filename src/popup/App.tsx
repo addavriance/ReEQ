@@ -12,6 +12,7 @@ import {useTabSync} from './hooks/useTabSync';
 
 function App() {
     const [activeTab, setActiveTab] = useState<'eq' | 'guide' | 'tabs'>('eq');
+    const [presetName, setPresetName] = useState('');
 
     useChromeMessaging();
     useTabSync();
@@ -48,12 +49,15 @@ function App() {
 
                             {/* Preset Controls */}
                             <div className="ears__controls">
-                                <PresetControls/>
+                                <PresetControls
+                                    presetName={presetName}
+                                    setPresetName={setPresetName}
+                                />
                             </div>
 
                             {/* Preset List */}
                             <div className="ears__presets">
-                                <PresetList/>
+                                <PresetList onPresetSelect={setPresetName}/>
                             </div>
 
                             {/* EQ Toggle Button */}

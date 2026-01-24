@@ -1,12 +1,18 @@
-import {useState, useRef} from 'react';
+import {useRef} from 'react';
+import {useEQStore} from '@/store';
+
+interface PresetControlsProps {
+    presetName: string;
+    setPresetName: (name: string) => void;
+}
 
 /**
  * Preset Controls component
  * Save, delete, reset, import, and export presets
  */
-export function PresetControls() {
-    const [presetName, setPresetName] = useState('');
+export function PresetControls({presetName, setPresetName}: PresetControlsProps) {
     const fileInputRef = useRef<HTMLInputElement>(null);
+    const setPresets = useEQStore((state) => state.presets.setPresets);
 
     const handleSavePreset = async () => {
         if (!presetName.trim()) return;
@@ -26,10 +32,14 @@ export function PresetControls() {
         if (!presetName.trim()) return;
 
         try {
-            await chrome.runtime.sendMessage({
+            const response = await chrome.runtime.sendMessage({
                 type: 'deletePreset',
                 preset: presetName.trim(),
             });
+
+            if (response && response.presets) {
+                setPresets(response.presets);
+            }
             setPresetName('');
         } catch (error) {
             console.error('Failed to delete preset:', error);
@@ -85,10 +95,14 @@ export function PresetControls() {
             const text = await file.text();
             const presets = JSON.parse(text);
 
-            await chrome.runtime.sendMessage({
+            const response = await chrome.runtime.sendMessage({
                 type: 'importPresets',
                 presets: presets,
             });
+
+            if (response && response.presets) {
+                setPresets(response.presets);
+            }
 
             // Reset file input
             if (fileInputRef.current) {
