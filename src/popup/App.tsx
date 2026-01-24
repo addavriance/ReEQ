@@ -33,7 +33,7 @@ function App() {
                         </em>
                         <div className="ears__links">
                             <a
-                                href="https://github.com/addavriance"
+                                href="https://github.com/addavriance/ReEQ"
                                 target="_blank"
                                 rel="noopener noreferrer"
                                 className="ears__link"
