@@ -293,11 +293,8 @@ chrome.runtime.onMessage.addListener((message: any, _sender, sendResponse) => {
                 }
 
                 case 'exportPresets': {
-                    chrome.runtime
-                        .sendMessage({type: 'downloadPresets', presets: await getPresets()})
-                        .catch(() => {
-                        });
-                    sendResponse({success: true});
+                    const presets = await getPresets();
+                    sendResponse({presets});
                     break;
                 }
 
