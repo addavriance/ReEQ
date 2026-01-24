@@ -31,6 +31,23 @@ function App() {
                         <em className="ears__warning-text">
                             Warning: Loud audio will damage hearing/speakers! Listen responsibly :)
                         </em>
+                        <div className="ears__links">
+                            <a
+                                href="https://github.com/addavriance"
+                                target="_blank"
+                                rel="noopener noreferrer"
+                                className="ears__link"
+                            >
+                                GitHub
+                            </a>
+                            <span className="ears__link-separator">•</span>
+                            <a
+                                href="mailto:"
+                                className="ears__link"
+                            >
+                                Contact
+                            </a>
+                        </div>
                     </div>
                 </header>
 
@@ -82,22 +99,22 @@ function App() {
                 </div>
 
                 {/* Footer */}
-                <footer className="ears__footer">
-                    <a
-                        href="https://github.com/addavriance"
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        className="ears__footer-link"
-                    >
-                        GitHub
-                    </a>
-                    <a
-                        href="mailto:"
-                        className="ears__footer-link"
-                    >
-                        Contact
-                    </a>
-                </footer>
+                {/*<footer className="ears__footer">*/}
+                {/*    <a*/}
+                {/*        href="https://github.com/addavriance"*/}
+                {/*        target="_blank"*/}
+                {/*        rel="noopener noreferrer"*/}
+                {/*        className="ears__footer-link"*/}
+                {/*    >*/}
+                {/*        GitHub*/}
+                {/*    </a>*/}
+                {/*    <a*/}
+                {/*        href="mailto:"*/}
+                {/*        className="ears__footer-link"*/}
+                {/*    >*/}
+                {/*        Contact*/}
+                {/*    </a>*/}
+                {/*</footer>*/}
             </div>
         </div>
     );
