@@ -1,4 +1,4 @@
-import {useEffect, useRef, useCallback} from 'react';
+import {useEffect, useRef, useCallback, useState} from 'react';
 import {useCanvasDrag} from './useCanvasDrag';
 import {linearGainToDB, dbToLinearGain} from '@/popup/utils/filterMath';
 import {
@@ -7,10 +7,11 @@ import {
     GAIN_CANVAS_HEIGHT,
     GAIN_LINE_HEIGHT,
     MIN_GAIN,
-    MAX_GAIN
+    MAX_GAIN, GAIN_LIMIT
 } from '@/popup/utils/constants';
 import {useEQStore} from '@/store';
 import {transformCanvasByRatio} from "@/popup/utils/canvas.ts";
+import {clamp, gainToY, yToGain} from "@/popup/utils/coordinateTransforms.ts";
 
 /**
  * GainLine component
@@ -20,23 +21,18 @@ export function GainLine() {
     const canvasRef = useRef<HTMLCanvasElement>(null);
     const gain = useEQStore((state) => state.gain.value);
     const updateGain = useEQStore((state) => state.gain.updateGain);
+    const [isDragging, setIsDragging] = useState(false);
 
     // Convert linear gain to dB for display
     const gainDB = linearGainToDB(gain);
 
-    // Calculate Y position (inverted: 0 at bottom, height at top)
-    const gainToY = (db: number) => {
-        const range = MAX_GAIN - MIN_GAIN;
-        return GAIN_CANVAS_HEIGHT * (1 - (db - MIN_GAIN) / range);
-    };
-
-    const yToGain = (y: number) => {
-        // Clamp y to canvas bounds
-        const clampedY = Math.max(0, Math.min(y, GAIN_CANVAS_HEIGHT));
-        const range = MAX_GAIN - MIN_GAIN;
-        const db = (1 - clampedY / GAIN_CANVAS_HEIGHT) * range + MIN_GAIN;
-        return dbToLinearGain(db);
-    };
+    const yToLimitedGain = (y: number) => dbToLinearGain(
+        clamp(
+            yToGain(y, GAIN_CANVAS_HEIGHT),
+            MIN_GAIN,
+            GAIN_LIMIT
+        )
+    );
 
     const y = gainToY(gainDB);
 
@@ -60,7 +56,7 @@ export function GainLine() {
      */
     const handleDrag = useCallback(
         (_x: number, mouseY: number) => {
-            const newGain = yToGain(mouseY);
+            const newGain = yToLimitedGain(mouseY);
             updateGain(newGain);
 
             // Send to background/offscreen
@@ -75,10 +71,12 @@ export function GainLine() {
     /**
      * Setup drag handling
      */
-    const {isDragging} = useCanvasDrag({
+    useCanvasDrag({
+        onDragStart: () => setIsDragging(true),
         onDrag: handleDrag,
+        onDragEnd: () => setIsDragging(false),
         isInBounds,
-        canvas: canvasRef.current,
+        canvasRef,
     });
 
     /**
@@ -88,15 +86,35 @@ export function GainLine() {
         const canvas = canvasRef.current;
         if (!canvas) return;
 
+        canvas.style.cursor = isDragging ? 'ns-resize' : 'initial';
+
         const ctx = canvas.getContext('2d');
         if (!ctx) return
 
-        const gainValueOffset = y < 15 ? 20 : 0;
+        const gainValueOffset = y < 50 ? 20 : 0;
 
         const dpr = window.devicePixelRatio || 1;
         transformCanvasByRatio(canvas, ctx, GAIN_CANVAS_WIDTH, GAIN_CANVAS_HEIGHT, dpr);
 
         ctx.clearRect(0, 0, GAIN_CANVAS_WIDTH, GAIN_CANVAS_HEIGHT);
+
+        const centerX = GAIN_CANVAS_WIDTH / 2;
+
+        // Vertical line
+        ctx.strokeStyle = COLORS.text;
+        ctx.globalAlpha = 0.5;
+        ctx.beginPath();
+        ctx.moveTo(centerX, gainToY(MIN_GAIN, GAIN_CANVAS_HEIGHT));
+        ctx.lineTo(centerX, gainToY(MAX_GAIN, GAIN_CANVAS_HEIGHT));
+        ctx.stroke();
+        ctx.globalAlpha = 1;
+
+        // Zero line
+        ctx.strokeStyle = COLORS.text;
+        ctx.beginPath();
+        ctx.moveTo(centerX - 5, gainToY(0, GAIN_CANVAS_HEIGHT));
+        ctx.lineTo(centerX + 5, gainToY(0, GAIN_CANVAS_HEIGHT));
+        ctx.stroke();
 
         ctx.fillStyle = isDragging ? COLORS.filterDotActive : COLORS.gainLine;
         ctx.fillRect(0, y - GAIN_LINE_HEIGHT / 2, GAIN_CANVAS_WIDTH, GAIN_LINE_HEIGHT);
@@ -115,11 +133,10 @@ export function GainLine() {
             height={GAIN_CANVAS_HEIGHT}
             style={{
                 backgroundColor: 'transparent',
-                position: 'absolute',
-                top: 0,
-                left: 0,
-                cursor: 'ns-resize',
                 pointerEvents: 'auto',
+                borderLeft: '1px solid #A8D8EA',
+                borderTop: '1px solid #A8D8EA',
+                borderBottom: '1px solid #A8D8EA',
             }}
         />
     );

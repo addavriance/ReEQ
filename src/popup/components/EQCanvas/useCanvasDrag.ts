@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useRef, useState} from 'react';
+import {useCallback, useEffect, useLayoutEffect, useRef, useState, RefObject} from 'react';
 
 interface DragState {
     isDragging: boolean;
@@ -13,7 +13,7 @@ interface UseCanvasDragOptions {
     onDrag?: (x: number, y: number, dx: number, dy: number, event: MouseEvent) => void;
     onDragEnd?: (x: number, y: number, event: MouseEvent) => void;
     isInBounds: (x: number, y: number) => boolean;
-    canvas: HTMLCanvasElement | null;
+    canvasRef: RefObject<HTMLCanvasElement | null>;
 }
 
 /**
@@ -25,7 +25,7 @@ export function useCanvasDrag({
                                   onDrag,
                                   onDragEnd,
                                   isInBounds,
-                                  canvas,
+                                  canvasRef,
                               }: UseCanvasDragOptions) {
     const [dragState, setDragState] = useState<DragState>({
         isDragging: false,
@@ -38,20 +38,31 @@ export function useCanvasDrag({
     const dragStateRef = useRef(dragState);
     dragStateRef.current = dragState;
 
+    // Track canvas mount state to trigger effect re-runs
+    const [canvasMounted, setCanvasMounted] = useState(false);
+
+    // Monitor canvas ref and update mount state after each render
+    useLayoutEffect(() => {
+        const mounted = canvasRef.current !== null;
+        if (mounted !== canvasMounted) {
+            setCanvasMounted(mounted);
+        }
+    });
+
     /**
      * Get mouse position relative to canvas
      */
     const getMousePos = useCallback(
         (event: MouseEvent): { x: number; y: number } => {
-            if (!canvas) return {x: 0, y: 0};
+            if (!canvasRef.current) return {x: 0, y: 0};
 
-            const rect = canvas.getBoundingClientRect();
+            const rect = canvasRef.current.getBoundingClientRect();
             return {
                 x: event.clientX - rect.left,
                 y: event.clientY - rect.top,
             };
         },
-        [canvas]
+        [canvasRef]
     );
 
     /**
@@ -120,6 +131,7 @@ export function useCanvasDrag({
      * Setup event listeners
      */
     useEffect(() => {
+        const canvas = canvasRef.current;
         if (!canvas) return;
 
         canvas.addEventListener('mousedown', handleMouseDown);
@@ -131,7 +143,7 @@ export function useCanvasDrag({
             window.removeEventListener('mousemove', handleMouseMove);
             window.removeEventListener('mouseup', handleMouseUp);
         };
-    }, [canvas, handleMouseDown, handleMouseMove, handleMouseUp]);
+    }, [canvasRef, canvasMounted, handleMouseDown, handleMouseMove, handleMouseUp]);
 
     return {
         isDragging: dragState.isDragging,
