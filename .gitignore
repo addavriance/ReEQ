@@ -29,11 +29,6 @@ old_source/
 .DS_Store
 Thumbs.db
 
-# Generated files
-public/icons/*.png
-!public/icons/icon-source.svg
-!public/icons/icon-optimized.svg
-
 # Temporary files
 tmp/
 temp/
