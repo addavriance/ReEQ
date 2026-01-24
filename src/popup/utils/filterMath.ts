@@ -92,8 +92,6 @@ export function calculateFilterCoefficients(filter: Filter): BiquadCoefficients 
 
 /**
  * Calculate frequency response magnitude at a specific frequency
- * CRITICAL: This math must not be changed - it's used to draw filter curves
- * Ported from popup.js:392-407
  */
 export function calculateFrequencyResponse(
     coefficients: BiquadCoefficients,
