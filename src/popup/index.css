@@ -80,7 +80,7 @@ body {
 /* EQ Section */
 .ears__eq {
     position: relative;
-    margin-bottom: 20px;
+    margin-bottom: 10px;
     display: flex;
     gap: 0;
 }
@@ -120,8 +120,7 @@ body {
     gap: 10px;
 }
 
-.ears__preset-controls,
-.ears__import-export {
+.ears__preset-controls {
     display: flex;
     gap: 5px;
     align-items: center;
@@ -145,7 +144,7 @@ body {
 }
 
 .ears__preset-input {
-    height: 20px;
+    height: 24px;
     width: 75px;
     background-color: #2C3E50;
     color: #A8D8EA;
@@ -184,6 +183,10 @@ body {
 .ears__button--stop {
     background-color: #A8D8EA;
     color: #2C3E50;
+}
+
+.ears__button--reset {
+    margin-left: auto;
 }
 
 /* Active Tabs List */

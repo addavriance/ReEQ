@@ -138,15 +138,6 @@ export function PresetControls({presetName, setPresetName}: PresetControlsProps)
                     - Delete Preset
                 </button>
                 <button
-                    onClick={handleResetFilters}
-                    className="ears__button ears__button--reset"
-                >
-                    Reset Filters
-                </button>
-            </div>
-
-            <div className="ears__import-export">
-                <button
                     onClick={handleExportPresets}
                     className="ears__button ears__button--export"
                     title="Export all saved presets to a file"
@@ -167,6 +158,12 @@ export function PresetControls({presetName, setPresetName}: PresetControlsProps)
                     onChange={handleFileSelect}
                     style={{display: 'none'}}
                 />
+                <button
+                    onClick={handleResetFilters}
+                    className="ears__button ears__button--reset"
+                >
+                    Reset Filters
+                </button>
             </div>
         </>
     );

@@ -47,7 +47,7 @@ export function PresetList({onPresetSelect}: PresetListProps) {
 
             {/* User presets */}
             {Object.keys(presets).length > 0 && (
-                <span className="ears__user-presets">
+                <>
                     {Object.keys(presets).map((presetName) => (
                         <button
                             key={presetName}
@@ -59,7 +59,7 @@ export function PresetList({onPresetSelect}: PresetListProps) {
                             {presetName}
                         </button>
                     ))}
-                </span>
+                </>
             )}
         </>
     );
