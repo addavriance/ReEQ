@@ -23,6 +23,7 @@ export function useFFTData(enabled: boolean) {
         const fetchFFT = async () => {
             try {
                 const response = await chrome.runtime.sendMessage({type: 'getFFT'});
+                console.log(response);
                 if (response && response.fft && Array.isArray(response.fft)) {
                     setFFTData(response.fft);
                 }
