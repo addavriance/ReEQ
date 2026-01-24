@@ -17,6 +17,7 @@ export const MAX_FREQUENCY = 22050; // Nyquist frequency at 44.1kHz
  */
 export const MIN_GAIN = -30;
 export const MAX_GAIN = 30;
+export const GAIN_LIMIT = 22;
 
 /**
  * Q range

@@ -39,7 +39,7 @@ export class AudioEngine {
         this.filterChain.getOutputNode().connect(this.audioContext.destination);
         this.fftAnalyzer.connect(this.filterChain.getOutputNode());
 
-        console.log('Ears audio ready');
+        console.log('ReEQ audio ready');
     }
 
     /**
