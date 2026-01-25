@@ -22,6 +22,9 @@ Built with React, TypeScript, and the Web Audio API.
 
 ---
 
+<img width="682" height="577" alt="image" src="https://github.com/user-attachments/assets/d3614a1d-7f21-4d92-b6b4-7f0e40f9b558" />
+
+
 ## Features
 
 - **10-band parametric equalizer** with adjustable frequency, gain, and Q-factor  
