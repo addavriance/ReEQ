@@ -87,8 +87,8 @@ src/
 
 ```bash
 # Clone repository
-git clone https://github.com/addavriance/BassBoostExtension.git
-cd BassBoostExtension
+git clone https://github.com/addavriance/ReEQ.git
+cd ReEQ
 
 # Install dependencies
 npm install
