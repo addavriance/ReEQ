@@ -22,6 +22,10 @@ import {
 } from './services/tabManager';
 import {FILTER_COUNT, DEFAULT_FILTER_FREQUENCIES, DEFAULT_FILTER_Q} from '@/types/filter.types';
 import {assertNever, type PopupToBackgroundMessage} from '@/types/messages.types';
+import {registerFullscreenWorkaround, releaseFullscreenForTab} from './services/fullscreenWorkaround';
+
+// Compensate for Chromium tabCapture fullscreen behavior without modifying page scripts.
+registerFullscreenWorkaround();
 
 /**
  * Get workspace status with all filters, gain, and active tabs
@@ -384,6 +388,7 @@ loadActiveTabIds().then(() => {
 });
 
 chrome.tabs.onRemoved.addListener(async (tabId) => {
+    await releaseFullscreenForTab(tabId);
     if (isTabActive(tabId)) {
         console.log('Tab closed, removing from active tabs:', tabId);
         await removeActiveTab(tabId);
